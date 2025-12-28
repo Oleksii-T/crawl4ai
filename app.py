@@ -13,20 +13,16 @@ from crawl4ai.extraction_strategy import LLMExtractionStrategy
 from dotenv import load_dotenv
 from pydantic import BaseModel, Field
 
-URL_TO_SCRAPE = "https://web.lmarena.ai/leaderboard"
+URL_TO_SCRAPE = "https://stopgame.ru/news"
 
-INSTRUCTION_TO_LLM = "Extract all rows from the main table as objects with 'rank', 'model', 'arena score', '95% CI', 'Votes', 'Organization', 'License' from the content."
-
+INSTRUCTION_TO_LLM = "Extract post information from the first page of the news feed. Post should contain following values: title, date, comments_amount, url, tags."
 
 class ArenaRow(BaseModel):
-    rank: str
-    model: str
-    arena_score: str = Field(alias="arena score")
-    ci_95: str = Field(alias="95% CI")
-    votes: str = Field(alias="Votes")
-    organization: str = Field(alias="Organization")
-    license: str = Field(alias="License")
-
+    title: str
+    date: str
+    comments_amount: str = Field(alias="0")
+    url: str
+    tags: str
 
 async def main():
     load_dotenv()
