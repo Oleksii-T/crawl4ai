@@ -1,3 +1,4 @@
 .crawl4ai/
 .playwright/
 .output/
+.env
