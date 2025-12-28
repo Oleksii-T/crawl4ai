@@ -1,3 +1,4 @@
+import argparse
 import asyncio
 import json
 import os
@@ -11,20 +12,44 @@ from crawl4ai import (
 )
 from crawl4ai.extraction_strategy import LLMExtractionStrategy
 from dotenv import load_dotenv
-from pydantic import BaseModel, Field
 
-URL_TO_SCRAPE = "https://stopgame.ru/news"
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description="Run crawl4ai with custom params.")
+    parser.add_argument("--url", type=str, required=True)
+    parser.add_argument("--instructions", type=str, required=True)
+    parser.add_argument(
+        "--schema",
+        type=str,
+        required=True,
+        help="JSON schema as a string, or shorthand like {\"title\":\"string\"}.",
+    )
+    return parser.parse_args()
 
-INSTRUCTION_TO_LLM = "Extract post information from the first page of the news feed. Post should contain following values: title, date, comments_amount, url, tags."
 
-class ArenaRow(BaseModel):
-    title: str
-    date: str
-    comments_amount: str = Field(alias="0")
-    url: str
-    tags: str
+def resolve_schema(schema_str: str) -> dict:
+    if not schema_str:
+        raise SystemExit("Missing --schema JSON string.")
+    try:
+        parsed = json.loads(schema_str)
+    except json.JSONDecodeError as exc:
+        raise SystemExit(f"Invalid --schema JSON: {exc}")
+    if isinstance(parsed, dict):
+        if "type" in parsed or "properties" in parsed:
+            return parsed
+        if parsed and all(isinstance(value, str) for value in parsed.values()):
+            return {
+                "title": "CustomSchema",
+                "type": "object",
+                "properties": {key: {"type": value} for key, value in parsed.items()},
+                "required": list(parsed.keys()),
+            }
+    raise SystemExit(
+        "Invalid --schema JSON: expected a JSON schema object or shorthand mapping like "
+        '{"title":"string","url":"string"}.'
+    )
 
-async def main():
+
+async def main(args: argparse.Namespace):
     load_dotenv()
     os.environ.setdefault("CRAWL4_AI_BASE_DIRECTORY", os.getcwd())
     os.makedirs(os.path.join(os.getcwd(), ".crawl4ai"), exist_ok=True)
@@ -38,9 +63,9 @@ async def main():
             temperature=0.0,
             max_tokens=800,
         ),
-        schema=ArenaRow.model_json_schema(),
+        schema=resolve_schema(args.schema),
         extraction_type="schema",
-        instruction=INSTRUCTION_TO_LLM,
+        instruction=args.instructions,
         chunk_token_threshold=1000,
         overlap_rate=0.0,
         apply_chunking=True,
@@ -58,8 +83,7 @@ async def main():
     browser_cfg = BrowserConfig(headless=True, verbose=True, channel="chrome")
 
     async with AsyncWebCrawler(config=browser_cfg) as crawler:
-
-        result = await crawler.arun(url=URL_TO_SCRAPE, config=crawl_config)
+        result = await crawler.arun(url=args.url, config=crawl_config)
 
         if result.success:
             data = json.loads(result.extracted_content)
@@ -72,4 +96,4 @@ async def main():
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    asyncio.run(main(parse_args()))
