@@ -53,8 +53,8 @@ async def main(args: argparse.Namespace):
     load_dotenv()
     os.environ.setdefault("CRAWL4_AI_BASE_DIRECTORY", os.getcwd())
     os.makedirs(os.path.join(os.getcwd(), ".crawl4ai"), exist_ok=True)
-    os.environ.setdefault("PLAYWRIGHT_BROWSERS_PATH", os.path.join(os.getcwd(), ".playwright"))
-    os.makedirs(os.environ["PLAYWRIGHT_BROWSERS_PATH"], exist_ok=True)
+    # os.environ.setdefault("PLAYWRIGHT_BROWSERS_PATH", os.path.join(os.getcwd(), ".playwright"))
+    # os.makedirs(os.environ["PLAYWRIGHT_BROWSERS_PATH"], exist_ok=True)
 
     llm_strategy = LLMExtractionStrategy(
         llm_config=LLMConfig(
