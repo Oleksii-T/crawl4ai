@@ -75,6 +75,7 @@ async def main(args: argparse.Namespace):
     crawl_config = CrawlerRunConfig(
         extraction_strategy=llm_strategy,
         cache_mode=CacheMode.BYPASS,
+        verbose=False,
         process_iframes=False,
         remove_overlay_elements=True,
         exclude_external_links=True,
