@@ -1,3 +1,4 @@
+venv
 .crawl4ai/
 .playwright/
 .output/
