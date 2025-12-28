@@ -80,7 +80,7 @@ async def main(args: argparse.Namespace):
         exclude_external_links=True,
     )
 
-    browser_cfg = BrowserConfig(headless=True, verbose=True, channel="chrome")
+    browser_cfg = BrowserConfig(headless=True, verbose=False, channel="chrome")
 
     async with AsyncWebCrawler(config=browser_cfg) as crawler:
         result = await crawler.arun(url=args.url, config=crawl_config)
@@ -90,7 +90,7 @@ async def main(args: argparse.Namespace):
 
             print("Extracted items:", data)
 
-            llm_strategy.show_usage()
+            # llm_strategy.show_usage()
         else:
             print("Error:", result.error_message)
 
