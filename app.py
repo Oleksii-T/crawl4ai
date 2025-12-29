@@ -1,100 +1,41 @@
-import argparse
-import asyncio
-import json
 import os
+from typing import Any, Dict, Optional
 
-from crawl4ai import (
-    AsyncWebCrawler,
-    BrowserConfig,
-    CacheMode,
-    CrawlerRunConfig,
-    LLMConfig,
-)
-from crawl4ai.extraction_strategy import LLMExtractionStrategy
-from dotenv import load_dotenv
+from fastapi import FastAPI, HTTPException, Request
+from pydantic import BaseModel
 
-def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Run crawl4ai with custom params.")
-    parser.add_argument("--url", type=str, required=True)
-    parser.add_argument("--instructions", type=str, required=True)
-    parser.add_argument(
-        "--schema",
-        type=str,
-        required=True,
-        help="JSON schema as a string, or shorthand like {\"title\":\"string\"}.",
-    )
-    return parser.parse_args()
+from crawler_service import run_crawl
+
+app = FastAPI(title="crawl4ai api")
+BEARER_TOKEN = os.getenv("CRAWL4AI_BEARER_TOKEN")
 
 
-def resolve_schema(schema_str: str) -> dict:
-    if not schema_str:
-        raise SystemExit("Missing --schema JSON string.")
+class CrawlRequest(BaseModel):
+    url: str
+    instructions: str
+    schema: Dict[str, Any] | str
+
+
+class CrawlResponse(BaseModel):
+    success: bool
+    data: Optional[Dict[str, Any]]
+    error: Optional[str]
+
+
+@app.post("/crawl4ai", response_model=CrawlResponse)
+async def crawl4ai_endpoint(payload: CrawlRequest, request: Request) -> CrawlResponse:
+    if BEARER_TOKEN:
+        auth_header = request.headers.get("authorization", "")
+        if auth_header != f"Bearer {BEARER_TOKEN}":
+            raise HTTPException(status_code=401, detail="Invalid bearer token.")
+
     try:
-        parsed = json.loads(schema_str)
-    except json.JSONDecodeError as exc:
-        raise SystemExit(f"Invalid --schema JSON: {exc}")
-    if isinstance(parsed, dict):
-        if "type" in parsed or "properties" in parsed:
-            return parsed
-        if parsed and all(isinstance(value, str) for value in parsed.values()):
-            return {
-                "title": "CustomSchema",
-                "type": "object",
-                "properties": {key: {"type": value} for key, value in parsed.items()},
-                "required": list(parsed.keys()),
-            }
-    raise SystemExit(
-        "Invalid --schema JSON: expected a JSON schema object or shorthand mapping like "
-        '{"title":"string","url":"string"}.'
-    )
+        result = await run_crawl(
+            url=payload.url,
+            instructions=payload.instructions,
+            schema_input=payload.schema,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
 
-
-async def main(args: argparse.Namespace):
-    load_dotenv()
-    os.environ.setdefault("CRAWL4_AI_BASE_DIRECTORY", os.getcwd())
-    os.makedirs(os.path.join(os.getcwd(), ".crawl4ai"), exist_ok=True)
-    # os.environ.setdefault("PLAYWRIGHT_BROWSERS_PATH", os.path.join(os.getcwd(), ".playwright"))
-    # os.makedirs(os.environ["PLAYWRIGHT_BROWSERS_PATH"], exist_ok=True)
-
-    llm_strategy = LLMExtractionStrategy(
-        llm_config=LLMConfig(
-            provider="deepseek/deepseek-chat",
-            api_token=os.getenv("DEEPSEEK_API"),
-            temperature=0.0,
-            max_tokens=800,
-        ),
-        schema=resolve_schema(args.schema),
-        extraction_type="schema",
-        instruction=args.instructions,
-        chunk_token_threshold=1000,
-        overlap_rate=0.0,
-        apply_chunking=True,
-        input_format="markdown",
-    )
-
-    crawl_config = CrawlerRunConfig(
-        extraction_strategy=llm_strategy,
-        cache_mode=CacheMode.BYPASS,
-        verbose=False,
-        process_iframes=False,
-        remove_overlay_elements=True,
-        exclude_external_links=True,
-    )
-
-    browser_cfg = BrowserConfig(headless=True, verbose=False, channel="chrome")
-
-    async with AsyncWebCrawler(config=browser_cfg) as crawler:
-        result = await crawler.arun(url=args.url, config=crawl_config)
-
-        if result.success:
-            data = json.loads(result.extracted_content)
-
-            print("Extracted items:", data)
-
-            # llm_strategy.show_usage()
-        else:
-            print("Error:", result.error_message)
-
-
-if __name__ == "__main__":
-    asyncio.run(main(parse_args()))
+    return CrawlResponse(**result)
