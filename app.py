@@ -18,7 +18,7 @@ class CrawlRequest(BaseModel):
 
 class CrawlResponse(BaseModel):
     success: bool
-    data: Optional[Dict[str, Any]]
+    data: Optional[Any]
     error: Optional[str]
 
 
