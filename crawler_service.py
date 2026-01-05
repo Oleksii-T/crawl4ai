@@ -82,10 +82,10 @@ async def run_crawl(url: str, instructions: str, schema_input: Any) -> Dict[str,
         headless=True, 
         verbose=False, 
         channel="chrome",
-        user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
-        headers={"Accept-Language": "ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7"},
-        enable_stealth=True,
-        text_mode=True,
+        # user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
+        # headers={"Accept-Language": "ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7"},
+        # enable_stealth=True,
+        # text_mode=True,
     )
 
     async with AsyncWebCrawler(config=browser_cfg) as crawler:
