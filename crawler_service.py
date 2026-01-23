@@ -1,6 +1,6 @@
 import json
 import os
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 from crawl4ai import (
     AsyncWebCrawler,
@@ -8,6 +8,7 @@ from crawl4ai import (
     CacheMode,
     CrawlerRunConfig,
     LLMConfig,
+    ProxyConfig,
 )
 from crawl4ai.extraction_strategy import LLMExtractionStrategy
 from dotenv import load_dotenv
@@ -48,10 +49,23 @@ def resolve_schema(schema_input: Any) -> Dict[str, Any]:
     )
 
 
-async def run_crawl(url: str, instructions: str, schema_input: Any) -> Dict[str, Any]:
+async def run_crawl(
+    url: str,
+    instructions: str,
+    schema_input: Any,
+    proxy_config: Optional[Dict[str, Any]] = None,
+) -> Dict[str, Any]:
     load_dotenv()
     os.environ.setdefault("CRAWL4_AI_BASE_DIRECTORY", os.getcwd())
     os.makedirs(os.path.join(os.getcwd(), ".crawl4ai"), exist_ok=True)
+
+    proxy_cfg_obj = None
+    if proxy_config:
+        proxy_cfg_obj = ProxyConfig(
+            server=proxy_config.get("server"),
+            username=proxy_config.get("username"),
+            password=proxy_config.get("password"),
+        )
 
     llm_strategy = LLMExtractionStrategy(
         llm_config=LLMConfig(
@@ -76,6 +90,7 @@ async def run_crawl(url: str, instructions: str, schema_input: Any) -> Dict[str,
         process_iframes=False,
         remove_overlay_elements=True,
         exclude_external_links=True,
+        proxy_config=proxy_cfg_obj,
     )
 
     browser_cfg = BrowserConfig(
