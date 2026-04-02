@@ -1,6 +1,7 @@
 import asyncio
 import json
-from typing import Any, Dict, List
+import os
+from typing import Any, Dict, List, Optional
 
 from crawl4ai.extraction_strategy import (
     LLMExtractionStrategy,
@@ -11,6 +12,14 @@ from crawl4ai.extraction_strategy import (
     TokenUsage,
     extract_xml_data,
     split_and_parse_json_objects,
+)
+from crawl4ai.async_configs import LLMConfig
+from crawl4ai.config import (
+    CHUNK_TOKEN_THRESHOLD,
+    DEFAULT_PROVIDER,
+    DEFAULT_PROVIDER_API_KEY,
+    OVERLAP_RATE,
+    WORD_TOKEN_RATE,
 )
 from crawl4ai.utils import (
     aperform_completion_with_backoff,
@@ -23,8 +32,43 @@ from crawl4ai.utils import (
 class DebugLLMExtractionStrategy(LLMExtractionStrategy):
     """Capture the exact prompts and chunk payloads sent to the upstream LLM."""
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(
+        self,
+        llm_config: LLMConfig = None,
+        instruction: str = None,
+        schema: Dict = None,
+        extraction_type: str = "block",
+        chunk_token_threshold=CHUNK_TOKEN_THRESHOLD,
+        overlap_rate=OVERLAP_RATE,
+        word_token_rate=WORD_TOKEN_RATE,
+        apply_chunking: bool = True,
+        input_format: str = "markdown",
+        force_json_response: bool = False,
+        verbose: bool = False,
+        provider: str = DEFAULT_PROVIDER,
+        api_token: Optional[str] = None,
+        base_url: str = None,
+        api_base: str = None,
+        **kwargs,
+    ):
+        super().__init__(
+            llm_config=llm_config,
+            instruction=instruction,
+            schema=schema,
+            extraction_type=extraction_type,
+            chunk_token_threshold=chunk_token_threshold,
+            overlap_rate=overlap_rate,
+            word_token_rate=word_token_rate,
+            apply_chunking=apply_chunking,
+            input_format=input_format,
+            force_json_response=force_json_response,
+            verbose=verbose,
+            provider=provider,
+            api_token=api_token,
+            base_url=base_url,
+            api_base=api_base,
+            **kwargs,
+        )
         self.debug_payload: Dict[str, Any] = {
             "merged_sections": [],
             "requests": [],
