@@ -10,8 +10,9 @@ from crawl4ai import (
     LLMConfig,
     ProxyConfig,
 )
-from crawl4ai.extraction_strategy import LLMExtractionStrategy
 from dotenv import load_dotenv
+
+from debug_extraction import DebugLLMExtractionStrategy
 
 
 def _schema_from_mapping(mapping: Dict[str, str]) -> Dict[str, Any]:
@@ -67,7 +68,7 @@ async def run_crawl(
             password=proxy_config.get("password"),
         )
 
-    llm_strategy = LLMExtractionStrategy(
+    llm_strategy = DebugLLMExtractionStrategy(
         llm_config=LLMConfig(
             provider="deepseek/deepseek-chat",
             api_token=os.getenv("DEEPSEEK_API"),
@@ -106,12 +107,30 @@ async def run_crawl(
     async with AsyncWebCrawler(config=browser_cfg) as crawler:
         result = await crawler.arun(url=url, config=crawl_config)
 
+    debug_payload = {
+        "html": result.html,
+        "cleaned_html": result.cleaned_html,
+        "fit_html": result.fit_html,
+        "markdown": {
+            "raw_markdown": result.markdown.raw_markdown if result.markdown else None,
+            "fit_markdown": result.markdown.fit_markdown if result.markdown else None,
+            "markdown_with_citations": result.markdown.markdown_with_citations if result.markdown else None,
+            "references_markdown": result.markdown.references_markdown if result.markdown else None,
+        },
+        "llm": llm_strategy.debug_payload,
+    }
+
     if not result.success:
-        return {"success": False, "data": None, "error": result.error_message}
+        return {
+            "success": False,
+            "data": None,
+            "error": result.error_message,
+            "debug": debug_payload,
+        }
 
     try:
         data = json.loads(result.extracted_content)
     except json.JSONDecodeError:
         data = {"raw": result.extracted_content}
 
-    return {"success": True, "data": data, "error": None}
+    return {"success": True, "data": data, "error": None, "debug": debug_payload}

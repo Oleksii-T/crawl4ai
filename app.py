@@ -24,6 +24,7 @@ class CrawlResponse(BaseModel):
     success: bool
     data: Optional[Any]
     error: Optional[str]
+    debug: Optional[Dict[str, Any]] = None
 
 
 @app.post("/crawl4ai", response_model=CrawlResponse)
