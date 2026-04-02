@@ -14,6 +14,7 @@ class CrawlRequest(BaseModel):
     url: str
     instructions: str
     schema: Dict[str, Any] | str
+    debug: int = 0
     proxy_url: Optional[str] = None
     proxy_port: Optional[int] = None
     proxy_username: Optional[str] = None
@@ -63,6 +64,7 @@ async def crawl4ai_endpoint(payload: CrawlRequest, request: Request) -> CrawlRes
             url=payload.url,
             instructions=payload.instructions,
             schema_input=payload.schema,
+            include_debug=payload.debug == 1,
             proxy_config=proxy_config,
         )
     except ValueError as exc:

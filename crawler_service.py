@@ -54,6 +54,7 @@ async def run_crawl(
     url: str,
     instructions: str,
     schema_input: Any,
+    include_debug: bool = False,
     proxy_config: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
     load_dotenv()
@@ -107,29 +108,31 @@ async def run_crawl(
     async with AsyncWebCrawler(config=browser_cfg) as crawler:
         result = await crawler.arun(url=url, config=crawl_config)
 
-    # Debug payload fields:
-    # - html: raw page HTML returned by Crawl4AI before scraping transforms.
-    # - cleaned_html: HTML after Crawl4AI scraping/cleanup.
-    # - fit_html: reduced HTML variant prepared for schema-oriented extraction.
-    # - markdown.raw_markdown: markdown generated from the selected crawl content.
-    # - markdown.fit_markdown: reduced markdown variant when Crawl4AI produces one.
-    # - markdown.markdown_with_citations: markdown annotated with extracted references.
-    # - markdown.references_markdown: reference list generated alongside cited markdown.
-    # - llm.merged_sections: chunked content sections passed into the extraction strategy.
-    # - llm.requests: one record per upstream LLM call, including chunk, prompt, response,
-    #   parsed blocks, usage, and any extraction error.
-    debug_payload = {
-        "html": result.html,
-        "cleaned_html": result.cleaned_html,
-        "fit_html": result.fit_html,
-        "markdown": {
-            "raw_markdown": result.markdown.raw_markdown if result.markdown else None,
-            "fit_markdown": result.markdown.fit_markdown if result.markdown else None,
-            "markdown_with_citations": result.markdown.markdown_with_citations if result.markdown else None,
-            "references_markdown": result.markdown.references_markdown if result.markdown else None,
-        },
-        "llm": llm_strategy.debug_payload,
-    }
+    debug_payload = None
+    if include_debug:
+        # Debug payload fields:
+        # - html: raw page HTML returned by Crawl4AI before scraping transforms.
+        # - cleaned_html: HTML after Crawl4AI scraping/cleanup.
+        # - fit_html: reduced HTML variant prepared for schema-oriented extraction.
+        # - markdown.raw_markdown: markdown generated from the selected crawl content.
+        # - markdown.fit_markdown: reduced markdown variant when Crawl4AI produces one.
+        # - markdown.markdown_with_citations: markdown annotated with extracted references.
+        # - markdown.references_markdown: reference list generated alongside cited markdown.
+        # - llm.merged_sections: chunked content sections passed into the extraction strategy.
+        # - llm.requests: one record per upstream LLM call, including chunk, prompt, response,
+        #   parsed blocks, usage, and any extraction error.
+        debug_payload = {
+            "html": result.html,
+            "cleaned_html": result.cleaned_html,
+            "fit_html": result.fit_html,
+            "markdown": {
+                "raw_markdown": result.markdown.raw_markdown if result.markdown else None,
+                "fit_markdown": result.markdown.fit_markdown if result.markdown else None,
+                "markdown_with_citations": result.markdown.markdown_with_citations if result.markdown else None,
+                "references_markdown": result.markdown.references_markdown if result.markdown else None,
+            },
+            "llm": llm_strategy.debug_payload,
+        }
 
     if not result.success:
         return {
