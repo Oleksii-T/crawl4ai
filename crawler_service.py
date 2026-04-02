@@ -90,7 +90,7 @@ async def run_crawl(
         verbose=False,
         process_iframes=False,
         remove_overlay_elements=True,
-        exclude_external_links=True,
+        exclude_external_links=False,
         proxy_config=proxy_cfg_obj,
     )
 
@@ -107,6 +107,17 @@ async def run_crawl(
     async with AsyncWebCrawler(config=browser_cfg) as crawler:
         result = await crawler.arun(url=url, config=crawl_config)
 
+    # Debug payload fields:
+    # - html: raw page HTML returned by Crawl4AI before scraping transforms.
+    # - cleaned_html: HTML after Crawl4AI scraping/cleanup.
+    # - fit_html: reduced HTML variant prepared for schema-oriented extraction.
+    # - markdown.raw_markdown: markdown generated from the selected crawl content.
+    # - markdown.fit_markdown: reduced markdown variant when Crawl4AI produces one.
+    # - markdown.markdown_with_citations: markdown annotated with extracted references.
+    # - markdown.references_markdown: reference list generated alongside cited markdown.
+    # - llm.merged_sections: chunked content sections passed into the extraction strategy.
+    # - llm.requests: one record per upstream LLM call, including chunk, prompt, response,
+    #   parsed blocks, usage, and any extraction error.
     debug_payload = {
         "html": result.html,
         "cleaned_html": result.cleaned_html,
