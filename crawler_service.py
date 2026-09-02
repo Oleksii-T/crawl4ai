@@ -1,5 +1,8 @@
+import dataclasses
 import json
 import os
+from collections.abc import Mapping
+from enum import Enum
 from typing import Any, Dict, Optional
 
 from crawl4ai import (
@@ -22,6 +25,36 @@ def _schema_from_mapping(mapping: Dict[str, str]) -> Dict[str, Any]:
         "properties": {key: {"type": value} for key, value in mapping.items()},
         "required": list(mapping.keys()),
     }
+
+
+def _json_safe(value: Any) -> Any:
+    """Convert crawler/library return values into FastAPI/Pydantic-safe data."""
+    if value is None or isinstance(value, (str, int, float, bool)):
+        return value
+
+    if isinstance(value, property):
+        return None
+
+    if isinstance(value, Enum):
+        return value.value
+
+    if isinstance(value, Mapping):
+        return {str(key): _json_safe(item) for key, item in value.items()}
+
+    if isinstance(value, (list, tuple, set, frozenset)):
+        return [_json_safe(item) for item in value]
+
+    if dataclasses.is_dataclass(value) and not isinstance(value, type):
+        return _json_safe(dataclasses.asdict(value))
+
+    if hasattr(value, "model_dump"):
+        return _json_safe(value.model_dump())
+
+    try:
+        json.dumps(value)
+        return value
+    except (TypeError, ValueError):
+        return str(value)
 
 
 def resolve_schema(schema_input: Any) -> Dict[str, Any]:
@@ -121,7 +154,7 @@ async def run_crawl(
         # - llm.merged_sections: chunked content sections passed into the extraction strategy.
         # - llm.requests: one record per upstream LLM call, including chunk, prompt, response,
         #   parsed blocks, usage, and any extraction error.
-        debug_payload = {
+        debug_payload = _json_safe({
             "html": result.html,
             "cleaned_html": result.cleaned_html,
             "fit_html": result.fit_html,
@@ -132,19 +165,19 @@ async def run_crawl(
                 "references_markdown": result.markdown.references_markdown if result.markdown else None,
             },
             "llm": llm_strategy.debug_payload,
-        }
+        })
 
     if not result.success:
-        return {
+        return _json_safe({
             "success": False,
             "data": None,
             "error": result.error_message,
             "debug": debug_payload,
-        }
+        })
 
     try:
-        data = json.loads(result.extracted_content)
+        data = _json_safe(json.loads(result.extracted_content))
     except json.JSONDecodeError:
         data = {"raw": result.extracted_content}
 
-    return {"success": True, "data": data, "error": None, "debug": debug_payload}
+    return _json_safe({"success": True, "data": data, "error": None, "debug": debug_payload})
