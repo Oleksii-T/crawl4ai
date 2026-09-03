@@ -6,6 +6,10 @@
 # start
     - pm2 start ecosystem.config.js
 
+# request options:
+    - java_script_enabled: optional boolean, defaults to true. Set false for pages
+      where client-side scripts remove useful server-rendered content before scraping.
+
 # restart
     - pm2 restart ecosystem.config.js
 

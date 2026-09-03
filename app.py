@@ -15,6 +15,7 @@ class CrawlRequest(BaseModel):
     instructions: str
     schema: Dict[str, Any] | str
     debug: int = 0
+    java_script_enabled: bool = True
     proxy_url: Optional[str] = None
     proxy_port: Optional[int] = None
     proxy_username: Optional[str] = None
@@ -66,6 +67,7 @@ async def crawl4ai_endpoint(payload: CrawlRequest, request: Request) -> CrawlRes
             schema_input=payload.schema,
             include_debug=payload.debug == 1,
             proxy_config=proxy_config,
+            java_script_enabled=payload.java_script_enabled,
         )
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc))

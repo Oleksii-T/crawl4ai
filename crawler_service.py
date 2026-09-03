@@ -89,6 +89,7 @@ async def run_crawl(
     schema_input: Any,
     include_debug: bool = False,
     proxy_config: Optional[Dict[str, Any]] = None,
+    java_script_enabled: bool = True,
 ) -> Dict[str, Any]:
     load_dotenv()
     os.environ.setdefault("CRAWL4_AI_BASE_DIRECTORY", os.getcwd())
@@ -132,6 +133,7 @@ async def run_crawl(
         headless=True, 
         verbose=False, 
         channel="chrome",
+        java_script_enabled=java_script_enabled,
         # user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
         # headers={"Accept-Language": "ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7"},
         # enable_stealth=True,
