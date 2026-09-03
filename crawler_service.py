@@ -90,6 +90,8 @@ async def run_crawl(
     include_debug: bool = False,
     proxy_config: Optional[Dict[str, Any]] = None,
     java_script_enabled: bool = True,
+    chunk_token_threshold: Optional[int] = None,
+    llm_max_tokens: Optional[int] = None,
 ) -> Dict[str, Any]:
     load_dotenv()
     os.environ.setdefault("CRAWL4_AI_BASE_DIRECTORY", os.getcwd())
@@ -108,12 +110,12 @@ async def run_crawl(
             provider="deepseek/deepseek-chat",
             api_token=os.getenv("DEEPSEEK_API"),
             temperature=0.0,
-            max_tokens=800,
+            max_tokens=llm_max_tokens or 800,
         ),
         schema=resolve_schema(schema_input),
         extraction_type="schema",
         instruction=instructions,
-        chunk_token_threshold=1000,
+        chunk_token_threshold=chunk_token_threshold or 1000,
         overlap_rate=0.0,
         apply_chunking=True,
         input_format="markdown",

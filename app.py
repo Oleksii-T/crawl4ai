@@ -2,7 +2,7 @@ import os
 from typing import Any, Dict, Optional
 
 from fastapi import FastAPI, HTTPException, Request
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from crawler_service import run_crawl
 
@@ -16,6 +16,8 @@ class CrawlRequest(BaseModel):
     schema: Dict[str, Any] | str
     debug: int = 0
     java_script_enabled: bool = True
+    chunk_token_threshold: Optional[int] = Field(default=None, gt=0)
+    llm_max_tokens: Optional[int] = Field(default=None, gt=0)
     proxy_url: Optional[str] = None
     proxy_port: Optional[int] = None
     proxy_username: Optional[str] = None
@@ -68,6 +70,8 @@ async def crawl4ai_endpoint(payload: CrawlRequest, request: Request) -> CrawlRes
             include_debug=payload.debug == 1,
             proxy_config=proxy_config,
             java_script_enabled=payload.java_script_enabled,
+            chunk_token_threshold=payload.chunk_token_threshold,
+            llm_max_tokens=payload.llm_max_tokens,
         )
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc))

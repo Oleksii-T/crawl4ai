@@ -9,6 +9,10 @@
 # request options:
     - java_script_enabled: optional boolean, defaults to true. Set false for pages
       where client-side scripts remove useful server-rendered content before scraping.
+    - chunk_token_threshold: optional positive integer, defaults to 1000. Increase it
+      to reduce page splitting when one source page should return one extracted item.
+    - llm_max_tokens: optional positive integer, defaults to 800. Increase it when
+      a larger chunk needs enough completion space for a full article body.
 
 # restart
     - pm2 restart ecosystem.config.js
