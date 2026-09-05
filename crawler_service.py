@@ -90,6 +90,7 @@ async def run_crawl(
     include_debug: bool = False,
     proxy_config: Optional[Dict[str, Any]] = None,
     java_script_enabled: bool = True,
+    do_full_scroll: bool = False,
     chunk_token_threshold: Optional[int] = None,
     llm_max_tokens: Optional[int] = None,
 ) -> Dict[str, Any]:
@@ -129,6 +130,11 @@ async def run_crawl(
         remove_overlay_elements=True,
         exclude_external_links=False,
         proxy_config=proxy_cfg_obj,
+        scan_full_page=do_full_scroll,
+        max_scroll_steps=20 if do_full_scroll else None,
+        scroll_delay=0.25,
+        js_code="window.scrollTo(0, 0);" if do_full_scroll else None,
+        delay_before_return_html=1.0 if do_full_scroll else 0.1,
     )
 
     browser_cfg = BrowserConfig(

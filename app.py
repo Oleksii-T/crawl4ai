@@ -16,6 +16,7 @@ class CrawlRequest(BaseModel):
     schema: Dict[str, Any] | str
     debug: int = 0
     java_script_enabled: bool = True
+    do_full_scroll: bool = False
     chunk_token_threshold: Optional[int] = Field(default=None, gt=0)
     llm_max_tokens: Optional[int] = Field(default=None, gt=0)
     proxy_url: Optional[str] = None
@@ -70,6 +71,7 @@ async def crawl4ai_endpoint(payload: CrawlRequest, request: Request) -> CrawlRes
             include_debug=payload.debug == 1,
             proxy_config=proxy_config,
             java_script_enabled=payload.java_script_enabled,
+            do_full_scroll=payload.do_full_scroll,
             chunk_token_threshold=payload.chunk_token_threshold,
             llm_max_tokens=payload.llm_max_tokens,
         )
